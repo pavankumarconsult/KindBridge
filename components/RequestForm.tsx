@@ -4,6 +4,7 @@ import { ServiceId, FormState } from '../types';
 import { ALL_SERVICES } from '../constants';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../src/firebase/firebase';
+import { sendServiceRequestEmail } from '../src/services/emailService';
 
 interface RequestFormProps {
   initialService?: ServiceId | '';
@@ -46,6 +47,28 @@ const RequestForm: React.FC<RequestFormProps> = ({ initialService = '' }) => {
         message: formData.message,
         status: 'Pending',
         createdAt: serverTimestamp(),
+      });
+
+      // Get service name for email
+      const selectedService = ALL_SERVICES.find(s => s.id === formData.service);
+      const serviceName = selectedService?.title || formData.service;
+
+      // Send email notification (non-blocking)
+      await sendServiceRequestEmail({
+        to_email: 'pavankumar.consult@gmail.com',
+        from_name: formData.name,
+        from_email: formData.contact,
+        service_name: serviceName,
+        message: formData.message,
+        submitted_at: new Date().toLocaleString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          timeZoneName: 'short',
+        }),
       });
 
       console.log('Form Submitted:', formData);

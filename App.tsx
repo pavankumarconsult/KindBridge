@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { AuthProvider } from './src/firebase/AuthContext';
 import { useAuth } from './src/firebase/useAuth';
+import { initEmailJS } from './src/services/emailService';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import ServiceCard from './components/ServiceCard';
@@ -14,6 +15,11 @@ import { ServiceId } from './types';
 const AppContent: React.FC<{ theme: 'light' | 'dark'; toggleTheme: () => void }> = ({ theme, toggleTheme }) => {
   const { currentUser, loading, showProfileModal, setShowProfileModal, userProfile, refreshProfile } = useAuth();
   const [selectedService, setSelectedService] = useState<ServiceId | ''>('');
+
+  // Initialize EmailJS on component mount
+  useEffect(() => {
+    initEmailJS();
+  }, []);
 
   const handleServiceSelect = (id: ServiceId) => {
     setSelectedService(id);
