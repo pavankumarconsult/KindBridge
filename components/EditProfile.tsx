@@ -56,7 +56,7 @@ const EditProfile: React.FC<EditProfileProps> = ({ profile, onClose, onSave, isN
       </h2>
       {isNew && (
         <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">
-          Welcome! Please fill in your profile details to get started.
+          Welcome! Please confirm your name and optionally add your mobile number.
         </p>
       )}
 
@@ -76,7 +76,7 @@ const EditProfile: React.FC<EditProfileProps> = ({ profile, onClose, onSave, isN
         {/* Name Field */}
         <div>
           <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-            Full Name
+            Full Name *
           </label>
           <input
             type="text"
@@ -92,7 +92,7 @@ const EditProfile: React.FC<EditProfileProps> = ({ profile, onClose, onSave, isN
         {/* Mobile Number Field */}
         <div>
           <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-            Mobile Number
+            Mobile Number (optional)
           </label>
           <input
             type="tel"
@@ -127,7 +127,7 @@ const EditProfile: React.FC<EditProfileProps> = ({ profile, onClose, onSave, isN
             disabled={isSubmitting}
             className="flex-1 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isSubmitting ? 'Saving...' : 'Save Changes'}
+            {isSubmitting ? 'Saving...' : isNew ? 'Get Started' : 'Save Changes'}
           </button>
           {!isNew && onClose && (
             <button

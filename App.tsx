@@ -7,11 +7,12 @@ import Hero from './components/Hero';
 import ServiceCard from './components/ServiceCard';
 import RequestForm from './components/RequestForm';
 import EditProfile from './components/EditProfile';
+import Login from './components/Login';
 import { PROJECT_SERVICES, SMALL_SERVICES, VALUES } from './constants';
 import { ServiceId } from './types';
 
 const AppContent: React.FC<{ theme: 'light' | 'dark'; toggleTheme: () => void }> = ({ theme, toggleTheme }) => {
-  const { showProfileModal, setShowProfileModal, userProfile, refreshProfile } = useAuth();
+  const { currentUser, loading, showProfileModal, setShowProfileModal, userProfile, refreshProfile } = useAuth();
   const [selectedService, setSelectedService] = useState<ServiceId | ''>('');
 
   const handleServiceSelect = (id: ServiceId) => {
@@ -22,21 +23,59 @@ const AppContent: React.FC<{ theme: 'light' | 'dark'; toggleTheme: () => void }>
     }
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-slate-600 dark:text-slate-400">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Not logged in - show login page
+  if (!currentUser) {
+    return <Login />;
+  }
+
+  // First-time user needs to complete profile
+  if (showProfileModal && userProfile) {
+    return (
+      <div className="fixed inset-0 bg-gradient-to-br from-blue-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center z-50 p-4">
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-md w-full">
+          <div className="p-6">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
+                Welcome! Complete Your Profile
+              </h2>
+              <p className="text-slate-600 dark:text-slate-400">
+                Please provide your information to get started
+              </p>
+            </div>
+            <EditProfile
+              profile={userProfile}
+              onClose={() => setShowProfileModal(false)}
+              onSave={async () => {
+                await refreshProfile();
+                setShowProfileModal(false);
+              }}
+              isNew={true}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Logged in with complete profile - show main app
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-white transition-colors duration-300">
-      {/* Profile Modal */}
-      {showProfileModal && userProfile && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <EditProfile
-            profile={userProfile}
-            isNew={true}
-            onSave={() => {
-              setShowProfileModal(false);
-              refreshProfile();
-            }}
-          />
-        </div>
-      )}
       <Navbar theme={theme} toggleTheme={toggleTheme} />
       
       {/* Hero Section */}
