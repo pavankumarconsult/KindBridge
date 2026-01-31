@@ -11,16 +11,15 @@ export const initEmailJS = () => {
   }
 };
 
-export interface EmailPayload {
-  to_email: string;
-  from_name: string;
-  from_email: string;
-  service_name: string;
+export interface ServiceRequestEmailPayload {
+  name: string;
+  email: string;
+  service: string;
   message: string;
-  submitted_at: string;
+  date: string;
 }
 
-export const sendServiceRequestEmail = async (payload: EmailPayload): Promise<void> => {
+export const sendServiceRequestEmail = async (payload: ServiceRequestEmailPayload): Promise<void> => {
   // Silently fail if EmailJS is not configured
   if (!EMAILJS_SERVICE_ID || !EMAILJS_TEMPLATE_ID || !EMAILJS_PUBLIC_KEY) {
     console.warn('EmailJS not configured. Email notification skipped.');
@@ -28,14 +27,19 @@ export const sendServiceRequestEmail = async (payload: EmailPayload): Promise<vo
   }
 
   try {
-    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
-      to_email: payload.to_email,
-      from_name: payload.from_name,
-      from_email: payload.from_email,
-      service_name: payload.service_name,
-      message: payload.message,
-      submitted_at: payload.submitted_at,
-    });
+    await emailjs.send(
+      EMAILJS_SERVICE_ID,
+      EMAILJS_TEMPLATE_ID,
+      {
+        name: payload.name,
+        email: payload.email,
+        service: payload.service,
+        message: payload.message,
+        date: payload.date,
+      },
+      EMAILJS_PUBLIC_KEY
+    );
+    console.log('Email notification sent successfully');
   } catch (err) {
     // Log error but don't throw - don't block form submission
     console.error('Failed to send email notification:', err);

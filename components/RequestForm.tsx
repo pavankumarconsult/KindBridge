@@ -55,20 +55,11 @@ const RequestForm: React.FC<RequestFormProps> = ({ initialService = '' }) => {
 
       // Send email notification (non-blocking)
       await sendServiceRequestEmail({
-        to_email: 'pavankumar.consult@gmail.com',
-        from_name: formData.name,
-        from_email: formData.contact,
-        service_name: serviceName,
+        name: formData.name,
+        email: formData.contact,
+        service: serviceName,
         message: formData.message,
-        submitted_at: new Date().toLocaleString('en-US', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit',
-          timeZoneName: 'short',
-        }),
+        date: new Date().toLocaleString(),
       });
 
       console.log('Form Submitted:', formData);

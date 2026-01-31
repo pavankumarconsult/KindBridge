@@ -21,23 +21,24 @@ This app uses **EmailJS** to send automatic email notifications when users submi
 1. Go to **Email Templates**
 2. Click **Create New Template**
 3. Name it: `kind_bridge_service_request` (or preferred name)
-4. Use this template:
+4. Use this template with EXACT variable names:
 
 ```
 Subject: New Service Request – Kind-Bridge
 
-From: {{from_name}} ({{from_email}})
+From: {{name}} ({{email}})
 
-Service: {{service_name}}
+Service: {{service}}
 
 Message:
 {{message}}
 
-Submitted: {{submitted_at}}
+Submitted: {{date}}
 ```
 
 5. Set **To Email** to: `pavankumar.consult@gmail.com`
-6. Copy the **Template ID** (e.g., `template_xxxxx`)
+6. Set **Reply-To** to: `{{email}}`
+7. Copy the **Template ID** (e.g., `template_xxxxx`)
 
 ### 4. Get Public Key
 1. Go to **Account** → **API Keys**
@@ -82,10 +83,9 @@ To modify the email template:
 
 1. Login to EmailJS dashboard
 2. Edit the template
-3. Available variables:
-   - `{{from_name}}` - Client name
-   - `{{from_email}}` - Client email/phone
-   - `{{service_name}}` - Selected service
+3. **REQUIRED Variables** (must match exactly):
+   - `{{name}}` - Client name
+   - `{{email}}` - Client email/phone
+   - `{{service}}` - Selected service name
    - `{{message}}` - Client message
-   - `{{submitted_at}}` - Submission timestamp
-   - `{{to_email}}` - Recipient (pavankumar.consult@gmail.com)
+   - `{{date}}` - Submission date & time
