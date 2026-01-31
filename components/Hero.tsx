@@ -20,7 +20,7 @@ const Hero: React.FC = () => {
             Humanity Powered Technology
           </span>
           <h1 className="text-5xl md:text-7xl font-bold text-slate-900 dark:text-white leading-[1.1] mb-8">
-            Connecting People to Solutions <span className="text-blue-600">with Care.</span>
+            Connecting(pavan kumar) People to Solutions <span className="text-blue-600">with Care.</span>
           </h1>
           <p className="text-lg md:text-xl text-slate-600 dark:text-slate-400 mb-10 leading-relaxed max-w-xl">
             We bridge the gap between high-tech possibilities and human-centered needs. From AI development to personal education, we deliver excellence with a heart.
