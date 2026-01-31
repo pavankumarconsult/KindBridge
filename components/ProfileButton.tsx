@@ -1,20 +1,25 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { RecaptchaVerifier, ConfirmationResult } from 'firebase/auth';
 import { useAuth } from '../src/firebase/useAuth';
 import {
   signInWithGoogle,
   signInWithEmail,
   signUpWithEmail,
   signOut,
+  signInWithPhoneStart,
+  signInWithPhoneVerify,
 } from '../src/firebase/authService';
+import { auth } from '../src/firebase/firebase';
+import EditProfile from './EditProfile';
 
-type AuthMode = 'methods' | 'login' | 'signup';
+type AuthMode = 'methods' | 'login' | 'signup' | 'phone' | 'phone-otp' | 'edit-profile';
 
 interface ProfileButtonProps {
   isDark?: boolean;
 }
 
 const ProfileButton: React.FC<ProfileButtonProps> = ({ isDark = false }) => {
-  const { currentUser, loading } = useAuth();
+  const { currentUser, loading, userProfile } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [authMode, setAuthMode] = useState<AuthMode>('methods');
   const [email, setEmail] = useState('');
@@ -22,6 +27,10 @@ const ProfileButton: React.FC<ProfileButtonProps> = ({ isDark = false }) => {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [otp, setOtp] = useState('');
+  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
+  const recaptchaVerifierRef = useRef<RecaptchaVerifier | null>(null);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -49,6 +58,60 @@ const ProfileButton: React.FC<ProfileButtonProps> = ({ isDark = false }) => {
       setIsOpen(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Google sign-in failed');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handlePhoneSignInStart = async () => {
+    if (!phoneNumber.trim()) {
+      setError('Please enter a valid phone number');
+      return;
+    }
+
+    try {
+      setError(null);
+      setIsSubmitting(true);
+
+      // Initialize reCAPTCHA verifier
+      if (!recaptchaVerifierRef.current) {
+        recaptchaVerifierRef.current = new RecaptchaVerifier(auth, 'recaptcha-container', {
+          size: 'invisible',
+          callback: () => {},
+        });
+      }
+
+      const result = await signInWithPhoneStart(phoneNumber, recaptchaVerifierRef.current);
+      setConfirmationResult(result);
+      setAuthMode('phone-otp');
+      setOtp('');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to send OTP');
+      recaptchaVerifierRef.current?.clear();
+      recaptchaVerifierRef.current = null;
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handlePhoneOtpVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!confirmationResult || !otp.trim()) {
+      setError('Please enter the OTP code');
+      return;
+    }
+
+    try {
+      setError(null);
+      setIsSubmitting(true);
+      await signInWithPhoneVerify(confirmationResult, otp);
+      setIsOpen(false);
+      setPhoneNumber('');
+      setOtp('');
+      setConfirmationResult(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Invalid OTP');
     } finally {
       setIsSubmitting(false);
     }
@@ -151,16 +214,39 @@ const ProfileButton: React.FC<ProfileButtonProps> = ({ isDark = false }) => {
                     {currentUser.email}
                   </p>
                 </div>
-                <button
-                  onClick={handleLogout}
-                  className={`w-full px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                    isDark
-                      ? 'bg-red-600/20 text-red-400 hover:bg-red-600/30'
-                      : 'bg-red-50 text-red-600 hover:bg-red-100'
-                  }`}
-                >
-                  Logout
-                </button>
+                {authMode === 'edit-profile' && userProfile ? (
+                  <EditProfile
+                    profile={userProfile}
+                    onClose={() => setAuthMode('methods')}
+                    onSave={() => {
+                      setAuthMode('methods');
+                      setError(null);
+                    }}
+                  />
+                ) : (
+                  <div className="space-y-2">
+                    <button
+                      onClick={() => setAuthMode('edit-profile')}
+                      className={`w-full px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                        isDark
+                          ? 'bg-blue-600/20 text-blue-400 hover:bg-blue-600/30'
+                          : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
+                      }`}
+                    >
+                      Edit Profile
+                    </button>
+                    <button
+                      onClick={handleLogout}
+                      className={`w-full px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                        isDark
+                          ? 'bg-red-600/20 text-red-400 hover:bg-red-600/30'
+                          : 'bg-red-50 text-red-600 hover:bg-red-100'
+                      }`}
+                    >
+                      Logout
+                    </button>
+                  </div>
+                )}
               </div>
             ) : authMode === 'methods' ? (
               /* Auth Methods */
@@ -175,6 +261,16 @@ const ProfileButton: React.FC<ProfileButtonProps> = ({ isDark = false }) => {
                   }`}
                 >
                   Sign in with Google
+                </button>
+                <button
+                  onClick={() => setAuthMode('phone')}
+                  className={`w-full px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                    isDark
+                      ? 'bg-green-600 text-white hover:bg-green-700'
+                      : 'bg-green-600 text-white hover:bg-green-700'
+                  }`}
+                >
+                  Sign in with Phone
                 </button>
                 <button
                   onClick={() => setAuthMode('login')}
@@ -195,6 +291,97 @@ const ProfileButton: React.FC<ProfileButtonProps> = ({ isDark = false }) => {
                   }`}
                 >
                   Email & Password Sign Up
+                </button>
+              </div>
+            ) : authMode === 'phone' ? (
+              /* Phone Sign In */
+              <div>
+                <form onSubmit={(e) => { e.preventDefault(); handlePhoneSignInStart(); }} className="space-y-3">
+                  <div>
+                    <label className={`block text-xs font-medium mb-2 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                      Phone Number
+                    </label>
+                    <input
+                      type="tel"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                      placeholder="+1234567890"
+                      required
+                      className={`w-full px-3 py-2 rounded-lg text-sm border transition-colors ${
+                        isDark
+                          ? 'bg-slate-700 border-slate-600 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-green-500/20'
+                          : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-green-500/20'
+                      }`}
+                    />
+                    <p className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                      Include country code (e.g., +1 for USA)
+                    </p>
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className={`w-full px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                      isDark
+                        ? 'bg-green-600 text-white hover:bg-green-700 disabled:opacity-50'
+                        : 'bg-green-600 text-white hover:bg-green-700 disabled:opacity-50'
+                    }`}
+                  >
+                    {isSubmitting ? 'Sending OTP...' : 'Send OTP'}
+                  </button>
+                </form>
+                <button
+                  onClick={() => { setAuthMode('methods'); setPhoneNumber(''); setError(null); }}
+                  className={`w-full mt-3 px-3 py-2 text-xs transition-colors ${
+                    isDark
+                      ? 'text-slate-400 hover:text-white'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  ← Back to methods
+                </button>
+                <div id="recaptcha-container" />
+              </div>
+            ) : authMode === 'phone-otp' ? (
+              /* Phone OTP Verification */
+              <div>
+                <p className={`text-xs mb-3 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                  Enter the OTP sent to {phoneNumber}
+                </p>
+                <form onSubmit={handlePhoneOtpVerify} className="space-y-3">
+                  <input
+                    type="text"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    placeholder="000000"
+                    maxLength={6}
+                    required
+                    className={`w-full px-3 py-2 rounded-lg text-sm border text-center tracking-widest transition-colors ${
+                      isDark
+                        ? 'bg-slate-700 border-slate-600 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-green-500/20'
+                        : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-green-500/20'
+                    }`}
+                  />
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className={`w-full px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                      isDark
+                        ? 'bg-green-600 text-white hover:bg-green-700 disabled:opacity-50'
+                        : 'bg-green-600 text-white hover:bg-green-700 disabled:opacity-50'
+                    }`}
+                  >
+                    {isSubmitting ? 'Verifying...' : 'Verify OTP'}
+                  </button>
+                </form>
+                <button
+                  onClick={() => { setAuthMode('phone'); setOtp(''); setConfirmationResult(null); setError(null); }}
+                  className={`w-full mt-3 px-3 py-2 text-xs transition-colors ${
+                    isDark
+                      ? 'text-slate-400 hover:text-white'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  ← Change phone number
                 </button>
               </div>
             ) : (

@@ -1,32 +1,18 @@
 
 import React, { useState, useEffect } from 'react';
 import { AuthProvider } from './src/firebase/AuthContext';
+import { useAuth } from './src/firebase/useAuth';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import ServiceCard from './components/ServiceCard';
 import RequestForm from './components/RequestForm';
+import EditProfile from './components/EditProfile';
 import { PROJECT_SERVICES, SMALL_SERVICES, VALUES } from './constants';
 import { ServiceId } from './types';
 
-const App: React.FC = () => {
+const AppContent: React.FC<{ theme: 'light' | 'dark'; toggleTheme: () => void }> = ({ theme, toggleTheme }) => {
+  const { showProfileModal, setShowProfileModal, userProfile, refreshProfile } = useAuth();
   const [selectedService, setSelectedService] = useState<ServiceId | ''>('');
-  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
-    if (typeof window !== 'undefined') {
-      return (localStorage.getItem('theme') as 'light' | 'dark') || 'light';
-    }
-    return 'light';
-  });
-
-  useEffect(() => {
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-    localStorage.setItem('theme', theme);
-  }, [theme]);
-
-  const toggleTheme = () => setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
 
   const handleServiceSelect = (id: ServiceId) => {
     setSelectedService(id);
@@ -37,8 +23,20 @@ const App: React.FC = () => {
   };
 
   return (
-    <AuthProvider>
-      <div className="min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-white transition-colors duration-300">
+    <div className="min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-white transition-colors duration-300">
+      {/* Profile Modal */}
+      {showProfileModal && userProfile && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <EditProfile
+            profile={userProfile}
+            isNew={true}
+            onSave={() => {
+              setShowProfileModal(false);
+              refreshProfile();
+            }}
+          />
+        </div>
+      )}
       <Navbar theme={theme} toggleTheme={toggleTheme} />
       
       {/* Hero Section */}
@@ -252,6 +250,31 @@ const App: React.FC = () => {
         </div>
       </footer>
       </div>
+  );
+};
+
+const App: React.FC = () => {
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem('theme') as 'light' | 'dark') || 'light';
+    }
+    return 'light';
+  });
+
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
+
+  return (
+    <AuthProvider>
+      <AppContent theme={theme} toggleTheme={toggleTheme} />
     </AuthProvider>
   );
 };
