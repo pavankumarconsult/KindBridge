@@ -18,6 +18,7 @@ export interface ServiceRequest {
   userId: string;
   userEmail: string;
   userName: string;
+  phoneNumber?: string;
   serviceType: string;
   description: string;
   status: 'Pending' | 'In Progress' | 'Completed' | 'Rejected';
@@ -34,13 +35,15 @@ export const submitServiceRequest = async (
   userEmail: string,
   userName: string,
   serviceType: string,
-  description: string
+  description: string,
+  phoneNumber?: string
 ): Promise<string> => {
   try {
     const docRef = await addDoc(collection(db, 'serviceRequests'), {
       userId,
       userEmail,
       userName,
+      phoneNumber: phoneNumber || null,
       serviceType,
       description,
       status: 'Pending',

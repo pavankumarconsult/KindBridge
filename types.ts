@@ -29,6 +29,7 @@ export interface ValuePoint {
 export interface FormState {
   name: string;
   contact: string;
+  phoneNumber: string;
   service: ServiceId | '';
   message: string;
 }

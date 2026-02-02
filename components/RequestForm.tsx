@@ -16,6 +16,7 @@ const RequestForm: React.FC<RequestFormProps> = ({ initialService = '' }) => {
   const [formData, setFormData] = useState<FormState>({
     name: '',
     contact: '',
+    phoneNumber: '',
     service: initialService,
     message: '',
   });
@@ -54,7 +55,8 @@ const RequestForm: React.FC<RequestFormProps> = ({ initialService = '' }) => {
         currentUser.email,
         formData.name || currentUser.displayName || 'User',
         formData.service,
-        formData.message
+        formData.message,
+        formData.phoneNumber || undefined
       );
 
       // Get service name for email
@@ -77,6 +79,7 @@ const RequestForm: React.FC<RequestFormProps> = ({ initialService = '' }) => {
       setFormData({
         name: '',
         contact: '',
+        phoneNumber: '',
         service: initialService,
         message: '',
       });
@@ -137,6 +140,17 @@ const RequestForm: React.FC<RequestFormProps> = ({ initialService = '' }) => {
                 className="w-full px-5 py-3 rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
               />
             </div>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Phone Number <span className="text-slate-400">(Optional)</span></label>
+            <input
+              type="tel"
+              name="phoneNumber"
+              value={formData.phoneNumber}
+              onChange={handleChange}
+              placeholder="Enter phone number"
+              className="w-full px-5 py-3 rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
+            />
           </div>
           <div className="space-y-2">
             <label className="text-sm font-semibold text-slate-700 dark:text-slate-300">Service Category</label>
