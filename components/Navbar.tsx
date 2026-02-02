@@ -27,7 +27,7 @@ const Navbar: React.FC<NavbarProps> = ({ theme, toggleTheme, onNavigate }) => {
         <button onClick={() => onNavigate('home')} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
           <img src="/logo.jpeg" alt="Kind-Bridge Logo" className="w-8 h-8 rounded-lg" />
           <span className={`text-xl font-bold tracking-tight ${isScrolled ? 'text-slate-900 dark:text-white' : 'text-slate-900 dark:text-white'}`}>
-            Kind-Bridge
+            -Bridge
           </span>
         </button>
         
