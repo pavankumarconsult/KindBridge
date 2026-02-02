@@ -25,7 +25,7 @@ const Navbar: React.FC<NavbarProps> = ({ theme, toggleTheme, onNavigate }) => {
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'glass shadow-sm py-4' : 'bg-transparent py-6'}`}>
       <div className="container mx-auto px-6 flex justify-between items-center">
         <button onClick={() => onNavigate('home')} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-          <img src="logo.png" alt="Kind-Bridge Logo" className="w-8 h-8 rounded-lg" />
+          <img src="https://res.cloudinary.com/ddfhaqeme/image/upload/v1770047058/Screenshot_2026-02-02_171455_uyth9l.png" alt="Kind-Bridge Logo" className="w-8 h-8 rounded-lg" />
           <span className={`text-xl font-bold tracking-tight ${isScrolled ? 'text-slate-900 dark:text-white' : 'text-slate-900 dark:text-white'}`}>
             ind-Bridge
           </span>
