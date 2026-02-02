@@ -9,12 +9,15 @@ import ServiceCard from './components/ServiceCard';
 import RequestForm from './components/RequestForm';
 import EditProfile from './components/EditProfile';
 import Login from './components/Login';
+import MyRequests from './src/components/MyRequests';
+import AdminDashboard from './src/components/AdminDashboard';
 import { PROJECT_SERVICES, SMALL_SERVICES, VALUES } from './constants';
 import { ServiceId } from './types';
 
 const AppContent: React.FC<{ theme: 'light' | 'dark'; toggleTheme: () => void }> = ({ theme, toggleTheme }) => {
   const { currentUser, loading, showProfileModal, setShowProfileModal, userProfile, refreshProfile } = useAuth();
   const [selectedService, setSelectedService] = useState<ServiceId | ''>('');
+  const [currentPage, setCurrentPage] = useState<'home' | 'my-requests' | 'admin-dashboard'>('home');
 
   // Initialize EmailJS on component mount
   useEffect(() => {
@@ -27,6 +30,11 @@ const AppContent: React.FC<{ theme: 'light' | 'dark'; toggleTheme: () => void }>
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
     }
+  };
+
+  const handleNavigate = (page: string) => {
+    setCurrentPage(page as 'home' | 'my-requests' | 'admin-dashboard');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   if (loading) {
@@ -79,13 +87,33 @@ const AppContent: React.FC<{ theme: 'light' | 'dark'; toggleTheme: () => void }>
     );
   }
 
-  // Logged in with complete profile - show main app
+  // Render different pages based on currentPage
+  if (currentPage === 'my-requests') {
+    return (
+      <div className="min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-white transition-colors duration-300">
+        <Navbar theme={theme} toggleTheme={toggleTheme} onNavigate={handleNavigate} />
+        <MyRequests onBack={() => handleNavigate('home')} />
+      </div>
+    );
+  }
+
+  if (currentPage === 'admin-dashboard') {
+    return (
+      <div className="min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-white transition-colors duration-300">
+        <Navbar theme={theme} toggleTheme={toggleTheme} onNavigate={handleNavigate} />
+        <AdminDashboard onBack={() => handleNavigate('home')} />
+      </div>
+    );
+  }
+
+  // Logged in with complete profile - show main app (home page)
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-white transition-colors duration-300">
-      <Navbar theme={theme} toggleTheme={toggleTheme} />
-      
-      {/* Hero Section */}
-      <Hero />
+      <>
+        <Navbar theme={theme} toggleTheme={toggleTheme} onNavigate={handleNavigate} />
+        
+        {/* Hero Section */}
+        <Hero />
 
       {/* Services Section */}
       <section id="services" className="py-24 bg-white dark:bg-slate-950">
@@ -294,9 +322,11 @@ const AppContent: React.FC<{ theme: 'light' | 'dark'; toggleTheme: () => void }>
           </div>
         </div>
       </footer>
-      </div>
+      </>
+    </div>
   );
 };
+
 
 const App: React.FC = () => {
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -325,3 +355,4 @@ const App: React.FC = () => {
 };
 
 export default App;
+

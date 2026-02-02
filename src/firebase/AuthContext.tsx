@@ -10,6 +10,7 @@ interface AuthContextType {
   showProfileModal: boolean;
   setShowProfileModal: (show: boolean) => void;
   refreshProfile: () => Promise<void>;
+  isAdmin: boolean;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -23,6 +24,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  const ADMIN_EMAIL = 'thekindbridge@gmail.com';
 
   const refreshProfile = async () => {
     if (!currentUser) return;
@@ -38,6 +42,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
+      
+      // Check if user is admin
+      if (user && user.email === ADMIN_EMAIL) {
+        setIsAdmin(true);
+      } else {
+        setIsAdmin(false);
+      }
 
       if (user) {
         try {
@@ -75,6 +86,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     showProfileModal,
     setShowProfileModal,
     refreshProfile,
+    isAdmin,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -1,0 +1,56 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Admin email constant
+    function isAdmin(email) {
+      return email == 'thekindbridge@gmail.com';
+    }
+
+    // Check if user is authenticated
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    // Get user email
+    function getUserEmail() {
+      return request.auth.token.email;
+    }
+
+    // Get user UID
+    function getUserUid() {
+      return request.auth.uid;
+    }
+
+    // Rules for serviceRequests collection
+    match /serviceRequests/{requestId} {
+      // Allow authenticated users to read only their own requests
+      allow read: if isAuth() && (
+        resource.data.userId == getUserUid() || 
+        isAdmin(getUserEmail())
+      );
+
+      // Allow creating a new request (write own document)
+      allow create: if isAuth() && 
+        request.resource.data.userId == getUserUid() &&
+        request.resource.data.status == 'Pending';
+
+      // Only admin can update status
+      allow update: if isAuth() && isAdmin(getUserEmail()) &&
+        request.resource.data.userId == resource.data.userId &&
+        request.resource.data.userEmail == resource.data.userEmail &&
+        request.resource.data.userName == resource.data.userName &&
+        request.resource.data.serviceType == resource.data.serviceType &&
+        request.resource.data.description == resource.data.description;
+
+      // Only admin can delete
+      allow delete: if isAuth() && isAdmin(getUserEmail());
+    }
+
+    // Rules for userProfiles collection
+    match /userProfiles/{userId} {
+      // Users can read and write their own profile
+      allow read, write: if isAuth() && userId == getUserUid();
+    }
+  }
+}

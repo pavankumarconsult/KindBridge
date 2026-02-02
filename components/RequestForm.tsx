@@ -2,8 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { ServiceId, FormState } from '../types';
 import { ALL_SERVICES } from '../constants';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../src/firebase/firebase';
+import { useAuth } from '../src/firebase/useAuth';
+import { submitServiceRequest } from '../src/services/requestService';
 import { sendServiceRequestEmail } from '../src/services/emailService';
 
 interface RequestFormProps {
@@ -11,6 +11,8 @@ interface RequestFormProps {
 }
 
 const RequestForm: React.FC<RequestFormProps> = ({ initialService = '' }) => {
+  const { currentUser, userProfile } = useAuth();
+  
   const [formData, setFormData] = useState<FormState>({
     name: '',
     contact: '',
@@ -38,16 +40,22 @@ const RequestForm: React.FC<RequestFormProps> = ({ initialService = '' }) => {
     setLoading(true);
     setError(null);
 
+    // Validation
+    if (!currentUser || !currentUser.email) {
+      setError('You must be logged in to submit a request.');
+      setLoading(false);
+      return;
+    }
+
     try {
-      // Save to Firestore
-      await addDoc(collection(db, 'serviceRequests'), {
-        name: formData.name,
-        email: formData.contact,
-        service: formData.service,
-        message: formData.message,
-        status: 'Pending',
-        createdAt: serverTimestamp(),
-      });
+      // Save to Firestore with userId, userEmail, and userName
+      const requestId = await submitServiceRequest(
+        currentUser.uid,
+        currentUser.email,
+        formData.name || currentUser.displayName || 'User',
+        formData.service,
+        formData.message
+      );
 
       // Get service name for email
       const selectedService = ALL_SERVICES.find(s => s.id === formData.service);
@@ -62,7 +70,7 @@ const RequestForm: React.FC<RequestFormProps> = ({ initialService = '' }) => {
         date: new Date().toLocaleString(),
       });
 
-      console.log('Form Submitted:', formData);
+      console.log('Request submitted with ID:', requestId);
       setSubmitted(true);
       
       // Reset form
@@ -96,8 +104,11 @@ const RequestForm: React.FC<RequestFormProps> = ({ initialService = '' }) => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h3 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">Message Sent!</h3>
-          <p className="text-slate-600 dark:text-slate-400">We will get back to you with the utmost care within 24 hours.</p>
+          <h3 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">Request Submitted!</h3>
+          <p className="text-slate-600 dark:text-slate-400 mb-4">We will get back to you with the utmost care within 24 hours.</p>
+          <p className="text-sm text-slate-500 dark:text-slate-500">
+            You can track your request status in the <strong>My Requests</strong> section.
+          </p>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -110,7 +121,7 @@ const RequestForm: React.FC<RequestFormProps> = ({ initialService = '' }) => {
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                placeholder="Jane Doe"
+                placeholder="Enter name"
                 className="w-full px-5 py-3 rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
               />
             </div>
@@ -122,7 +133,7 @@ const RequestForm: React.FC<RequestFormProps> = ({ initialService = '' }) => {
                 name="contact"
                 value={formData.contact}
                 onChange={handleChange}
-                placeholder="jane@example.com"
+                placeholder="Enter email or phone"
                 className="w-full px-5 py-3 rounded-xl border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
               />
             </div>
@@ -156,7 +167,7 @@ const RequestForm: React.FC<RequestFormProps> = ({ initialService = '' }) => {
           </div>
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !currentUser}
             className="w-full py-4 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all transform hover:scale-[1.01] shadow-lg shadow-blue-200 dark:shadow-blue-900/20 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Sending...' : 'Send Requirement'}
